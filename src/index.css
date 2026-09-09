@@ -1,0 +1,71 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 40 33% 98%; /* warm ivory #FDFCF8 */
+    --foreground: 220 10% 15%; /* deep charcoal */
+    
+    --card: 0 0% 100%;
+    --card-foreground: 220 10% 15%;
+    
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 10% 15%;
+    
+    --primary: 220 10% 15%; /* deep charcoal */
+    --primary-foreground: 40 33% 98%;
+    
+    --secondary: 220 10% 95%; /* very light grey */
+    --secondary-foreground: 220 10% 15%;
+    
+    --muted: 220 10% 95%;
+    --muted-foreground: 220 10% 40%;
+    
+    --accent: 24 95% 55%; /* signal orange / coral */
+    --accent-foreground: 0 0% 100%;
+
+    --positive: 160 50% 45%; /* sea-glass green */
+    --positive-foreground: 0 0% 100%;
+    
+    --intelligence: 270 70% 60%; /* electric violet */
+    --intelligence-foreground: 0 0% 100%;
+    
+    --maritime: 190 60% 40%; /* muted ocean teal */
+    --maritime-foreground: 0 0% 100%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 220 10% 90%;
+    --input: 220 10% 90%;
+    --ring: 220 10% 15%;
+
+    --radius: 0.25rem; /* sharper corners for industrial look */
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased selection:bg-accent/20;
+    /* Subtle grain/noise background */
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
+  }
+}
+
+/* Custom chart grid lines to be more subtle */
+.recharts-cartesian-grid-horizontal line,
+.recharts-cartesian-grid-vertical line {
+  stroke: hsl(var(--border));
+  stroke-dasharray: 4 4;
+}
+
+.recharts-text {
+  font-family: 'Inter', sans-serif;
+  fill: hsl(var(--muted-foreground));
+}
