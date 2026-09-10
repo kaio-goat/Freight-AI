@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Clock, ArrowRight, Trash2, Copy, Search, Filter } from 'lucide-react';
+import { Clock, ArrowRight, Trash2, Copy, Search } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { useScenarioStore } from '@/store/scenarioStore';
 import { cn } from '@/lib/utils';
-import type { VoyageScenario } from '@/data/mockData';
+import type { VoyageScenario } from '@/data/types';
+import { formatNumber, formatCurrency } from '@/utils/formatting';
 
 export function History() {
   const navigate = useNavigate();
@@ -12,9 +13,9 @@ export function History() {
   
   const [searchTerm, setSearchTerm] = useState('');
 
-  const filteredScenarios = scenarios.filter((s: VoyageScenario) => 
-    s.origin.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    s.destination.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  const filteredScenarios = scenarios.filter(s => 
+    s.originName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    s.destinationName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     s.cargo.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -64,10 +65,6 @@ export function History() {
             className="w-full pl-10 pr-4 py-2 border border-border bg-card focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
           />
         </div>
-        <Button variant="outline" className="flex items-center">
-          <Filter className="w-4 h-4 mr-2" />
-          Filters
-        </Button>
       </div>
 
       <div className="border border-border bg-card">
@@ -81,34 +78,42 @@ export function History() {
               >
                 <div className="flex-1">
                   <div className="flex items-center space-x-2 text-lg font-bold">
-                    <span>{scenario.origin}</span>
+                    <span>{scenario.originName}</span>
                     <ArrowRight className="w-4 h-4 text-muted-foreground" />
-                    <span>{scenario.destination}</span>
+                    <span>{scenario.destinationName}</span>
                   </div>
                   <div className="text-sm text-muted-foreground mt-1">
-                    {scenario.quantity.toLocaleString()} MT · {scenario.cargo} · {scenario.contract}
+                    {formatNumber(scenario.quantity)} MT · {scenario.cargo} · {scenario.contract}
                   </div>
                 </div>
                 
                 <div className="flex-1 grid grid-cols-3 gap-4">
-                  <div>
-                    <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Vessel</div>
-                    <div className="font-medium text-sm">{scenario.recommendedVessel}</div>
-                  </div>
-                  <div>
-                    <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Forecast Rate</div>
-                    <div className="font-medium text-sm">${scenario.forecastRate.toFixed(2)} / MT</div>
-                  </div>
-                  <div>
-                    <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Risk</div>
-                    <div className={cn(
-                      "font-medium text-sm",
-                      scenario.congestionRisk === 'High' ? "text-accent" : 
-                      scenario.congestionRisk === 'Low' ? "text-positive" : "text-foreground"
-                    )}>
-                      {scenario.congestionRisk}
+                  {scenario.decisionResult ? (
+                    <>
+                      <div>
+                        <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Vessel</div>
+                        <div className="font-medium text-sm">{scenario.decisionResult.vessel?.recommendedVessel || 'Unknown'}</div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Forecast Rate</div>
+                        <div className="font-medium text-sm">{scenario.decisionResult.forecast?.currentRate ? `${formatCurrency(scenario.decisionResult.forecast.currentRate)} / MT` : 'N/A'}</div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Risk</div>
+                        <div className={cn(
+                          "font-medium text-sm",
+                          scenario.decisionResult.port?.destination?.status === 'INCOMPATIBLE' ? "text-accent" : 
+                          scenario.decisionResult.risk?.overallRisk === 'Low' ? "text-positive" : "text-warning text-yellow-600"
+                        )}>
+                          {scenario.decisionResult.port?.destination?.status === 'INCOMPATIBLE' ? 'Incompatible' : (scenario.decisionResult.risk?.overallRisk || 'Unknown')}
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="col-span-3 text-sm text-muted-foreground italic flex items-center">
+                      Legacy forecast data
                     </div>
-                  </div>
+                  )}
                 </div>
                 
                 <div className="flex items-center justify-between md:justify-end gap-4 md:w-48">

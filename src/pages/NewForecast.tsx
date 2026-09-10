@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Ship, MapPin, Database, Anchor, Activity, CheckCircle2 } from 'lucide-react';
+import { Ship, MapPin, Database, Anchor, Activity, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { useScenarioStore } from '@/store/scenarioStore';
-import type { CargoType, ContractDuration, VoyageScenario, RecommendationTiming } from '@/data/mockData';
+import type { CargoType, ContractDuration, VoyageScenario } from '@/data/types';
+import { PORTS } from '@/data/ports';
+import { runDecisionEngine } from '@/services/decisionEngine';
 import { cn } from '@/lib/utils';
 
 export function NewForecast() {
@@ -12,16 +14,19 @@ export function NewForecast() {
   
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisStep, setAnalysisStep] = useState(0);
+  const [error, setError] = useState<string | null>(null);
   
   // Form State
   const [cargo, setCargo] = useState<CargoType>('Coking Coal');
   const [quantity, setQuantity] = useState<string>('70000');
-  const [origin, setOrigin] = useState<string>('Australia');
-  const [destination, setDestination] = useState<string>('Paradip');
+  
+  // Use IDs for operational selection
+  const [originId, setOriginId] = useState<string>('port-australia-newcastle');
+  const [destinationId, setDestinationId] = useState<string>('port-india-paradip');
   const [contract, setContract] = useState<ContractDuration>('Spot');
 
-  const origins = ['Australia', 'United States', 'Mozambique', 'Russia', 'Indonesia'];
-  const destinations = ['Paradip', 'Visakhapatnam', 'Gangavaram', 'Gopalpur', 'Dhamra', 'Sagar-Sandheads', 'Haldia'];
+  const origins = PORTS.filter(p => p.region !== 'East Coast');
+  const destinations = PORTS.filter(p => p.region === 'East Coast');
   const cargos: CargoType[] = ['Coking Coal', 'Thermal Coal', 'Iron Ore', 'Limestone', 'Other Bulk Cargo'];
   const contracts: ContractDuration[] = ['Spot', '1 month', '3 months', '6 months', '12 months'];
 
@@ -36,6 +41,19 @@ export function NewForecast() {
   ];
 
   const handleRunAnalysis = () => {
+    setError(null);
+    const qty = parseInt(quantity.replace(/,/g, ''), 10);
+    
+    if (!qty || isNaN(qty) || qty <= 0) {
+      setError("Please enter a valid quantity.");
+      return;
+    }
+    
+    if (!originId || !destinationId) {
+      setError("Please select both origin and destination ports.");
+      return;
+    }
+
     setIsAnalyzing(true);
     let currentStep = 0;
     
@@ -45,46 +63,44 @@ export function NewForecast() {
         setAnalysisStep(currentStep);
       } else {
         clearInterval(interval);
-        generateScenario();
+        generateScenario(qty);
       }
     }, 800);
   };
 
-  const generateScenario = () => {
-    // Generate deterministic but fake data based on inputs
-    const qty = parseInt(quantity.replace(/,/g, ''), 10) || 70000;
-    
-    // Simple mock logic for recommendation
-    let recommendedVessel = 'Panamax';
-    if (qty > 100000) recommendedVessel = 'Capesize';
-    else if (qty < 40000) recommendedVessel = 'Handysize';
-    else if (qty <= 60000) recommendedVessel = 'Supramax';
-    
-    let marketTiming: RecommendationTiming = 'WAIT';
-    if (origin === 'Mozambique') marketTiming = 'ENTER NOW';
-    else if (origin === 'Russia') marketTiming = 'MONITOR';
-    
-    const newScenario: VoyageScenario = {
-      id: `sc-${Date.now()}`,
-      createdAt: new Date().toISOString(),
-      cargo,
-      quantity: qty,
-      origin,
-      destination,
-      contract,
-      forecastRate: 12 + Math.random() * 8, // Random rate between 12 and 20
-      recommendedVessel,
-      recommendationScore: 88 + Math.floor(Math.random() * 8),
-      marketTiming,
-      congestionRisk: Math.random() > 0.7 ? 'Moderate' : 'Low',
-      estimatedVoyageCost: 0.8 + Math.random() * 0.7,
-      portCompatibility: 85 + Math.floor(Math.random() * 12),
-      confidence: 80 + Math.floor(Math.random() * 15)
-    };
+  const generateScenario = (qty: number) => {
+    try {
+      // Run deterministic engine using IDs
+      const decisionResult = runDecisionEngine(originId, destinationId, cargo, qty);
+      
+      const originPort = PORTS.find(p => p.id === originId);
+      const destPort = PORTS.find(p => p.id === destinationId);
+      
+      const cleanOrigin = (originPort?.name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const cleanDest = (destPort?.name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
-    addScenario(newScenario);
-    setActiveScenario(newScenario.id);
-    navigate('/analysis');
+      const newScenario: VoyageScenario = {
+        id: `sc-${Date.now()}`,
+        createdAt: new Date().toISOString(),
+        cargo,
+        quantity: qty,
+        originId,
+        originName: originPort?.name || 'Unknown',
+        destinationId,
+        destinationName: destPort?.name || 'Unknown',
+        routeId: `${cleanOrigin}-${cleanDest}`,
+        contract,
+        decisionResult
+      };
+
+      addScenario(newScenario);
+      setActiveScenario(newScenario.id);
+      navigate('/analysis');
+    } catch (err: any) {
+      console.error("Decision engine failed:", err);
+      setError(err.message || "Failed to generate forecast. Please check inputs and try again.");
+      setIsAnalyzing(false);
+    }
   };
 
   if (isAnalyzing) {
@@ -144,6 +160,13 @@ export function NewForecast() {
         <h1 className="text-4xl font-bold tracking-tight text-primary mb-2">Build a Voyage Scenario</h1>
         <p className="text-xl text-muted-foreground">Configure cargo and route to generate a freight forecast.</p>
       </header>
+      
+      {error && (
+        <div className="mb-6 p-4 border border-accent bg-accent/10 text-accent font-medium flex items-center">
+          <AlertTriangle className="w-5 h-5 mr-2" />
+          {error}
+        </div>
+      )}
 
       <div className="grid md:grid-cols-3 gap-8">
         <div className="md:col-span-2 space-y-8">
@@ -212,17 +235,17 @@ export function NewForecast() {
                 <div className="space-y-2">
                   {origins.map((o) => (
                     <button
-                      key={o}
-                      onClick={() => setOrigin(o)}
+                      key={o.id}
+                      onClick={() => setOriginId(o.id)}
                       className={cn(
                         "w-full text-left px-4 py-3 border text-sm font-medium transition-colors flex items-center justify-between",
-                        origin === o 
+                        originId === o.id 
                           ? "bg-secondary text-secondary-foreground border-primary" 
                           : "bg-background text-muted-foreground hover:border-primary/50"
                       )}
                     >
-                      {o}
-                      {origin === o && <div className="w-2 h-2 rounded-full bg-primary" />}
+                      {o.name}
+                      {originId === o.id && <div className="w-2 h-2 rounded-full bg-primary" />}
                     </button>
                   ))}
                 </div>
@@ -233,17 +256,17 @@ export function NewForecast() {
                 <div className="space-y-2">
                   {destinations.map((d) => (
                     <button
-                      key={d}
-                      onClick={() => setDestination(d)}
+                      key={d.id}
+                      onClick={() => setDestinationId(d.id)}
                       className={cn(
                         "w-full text-left px-4 py-3 border text-sm font-medium transition-colors flex items-center justify-between",
-                        destination === d 
+                        destinationId === d.id 
                           ? "bg-secondary text-secondary-foreground border-primary" 
                           : "bg-background text-muted-foreground hover:border-primary/50"
                       )}
                     >
-                      {d}
-                      {destination === d && <div className="w-2 h-2 rounded-full bg-primary" />}
+                      {d.name}
+                      {destinationId === d.id && <div className="w-2 h-2 rounded-full bg-primary" />}
                     </button>
                   ))}
                 </div>
@@ -269,9 +292,9 @@ export function NewForecast() {
               <div>
                 <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">Route</div>
                 <div className="font-medium text-sm flex items-center space-x-2">
-                  <span>{origin}</span>
+                  <span>{origins.find(o => o.id === originId)?.name}</span>
                   <span className="text-muted-foreground">→</span>
-                  <span>{destination}</span>
+                  <span>{destinations.find(d => d.id === destinationId)?.name}</span>
                 </div>
               </div>
               
