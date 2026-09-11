@@ -5,8 +5,10 @@ export function checkPortCompatibility(vessel: VesselClass, port: PortData): Por
   const warnings: string[] = [];
   let score = 100;
 
-  // Hard Constraint: Draft Check
-  if (vessel.typicalDraft > port.maxDraft) {
+  // Constraint: Draft Check
+  if (port.maxDraft === undefined) {
+    checks.push(`Draft infrastructure data unavailable. Proceeding with caution.`);
+  } else if (vessel.typicalDraft > port.maxDraft) {
     warnings.push(`Vessel draft (${vessel.typicalDraft}m) exceeds the port's maximum permitted draft (${port.maxDraft}m).`);
     return { score: 0, status: 'INCOMPATIBLE', checks, warnings };
   } else if (vessel.typicalDraft > port.maxDraft - 1) {
@@ -17,8 +19,10 @@ export function checkPortCompatibility(vessel: VesselClass, port: PortData): Por
     checks.push(`Draft compatible (${vessel.typicalDraft}m < ${port.maxDraft}m).`);
   }
 
-  // Hard Constraint: LOA Check
-  if (vessel.typicalLOA > port.maxLOA) {
+  // Constraint: LOA Check
+  if (port.maxLOA === undefined) {
+    checks.push(`LOA infrastructure data unavailable. Proceeding with caution.`);
+  } else if (vessel.typicalLOA > port.maxLOA) {
     warnings.push(`Vessel LOA (${vessel.typicalLOA}m) exceeds the port's maximum vessel length (${port.maxLOA}m).`);
     return { score: 0, status: 'INCOMPATIBLE', checks, warnings };
   } else {
@@ -31,7 +35,9 @@ export function checkPortCompatibility(vessel: VesselClass, port: PortData): Por
   }
 
   // Congestion Check
-  if (port.congestionIndex > 70) {
+  if (port.congestionIndex === undefined) {
+    checks.push(`Congestion data unavailable.`);
+  } else if (port.congestionIndex > 70) {
     warnings.push(`Severe port congestion detected (Index: ${port.congestionIndex}/100).`);
     score -= 15;
   } else if (port.congestionIndex > 40) {
@@ -45,6 +51,8 @@ export function checkPortCompatibility(vessel: VesselClass, port: PortData): Por
   if (port.shoreCargoHandling === false) {
     warnings.push(`No shore-based cargo handling facilities. Requires geared vessels or floating cranes.`);
     score -= 10; // Penalty unless vessel is geared, but simplified here
+  } else if (port.cargoHandlingScore === undefined) {
+    checks.push(`Cargo handling score unavailable.`);
   } else if (port.cargoHandlingScore < 60) {
     warnings.push(`Sub-optimal cargo handling infrastructure.`);
     score -= 10;

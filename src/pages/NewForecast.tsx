@@ -6,6 +6,7 @@ import { useScenarioStore } from '@/store/scenarioStore';
 import type { CargoType, ContractDuration, VoyageScenario } from '@/data/types';
 import { PORTS } from '@/data/ports';
 import { runDecisionEngine } from '@/services/decisionEngine';
+import { PortSelector } from '@/components/ui/PortSelector';
 import { cn } from '@/lib/utils';
 
 export function NewForecast() {
@@ -51,6 +52,11 @@ export function NewForecast() {
     
     if (!originId || !destinationId) {
       setError("Please select both origin and destination ports.");
+      return;
+    }
+
+    if (originId === destinationId) {
+      setError("Origin and destination cannot be the same port.");
       return;
     }
 
@@ -230,46 +236,23 @@ export function NewForecast() {
             </h2>
             
             <div className="grid md:grid-cols-2 gap-8">
-              <div>
-                <label className="block text-sm font-medium mb-4">Origin</label>
-                <div className="space-y-2">
-                  {origins.map((o) => (
-                    <button
-                      key={o.id}
-                      onClick={() => setOriginId(o.id)}
-                      className={cn(
-                        "w-full text-left px-4 py-3 border text-sm font-medium transition-colors flex items-center justify-between",
-                        originId === o.id 
-                          ? "bg-secondary text-secondary-foreground border-primary" 
-                          : "bg-background text-muted-foreground hover:border-primary/50"
-                      )}
-                    >
-                      {o.name}
-                      {originId === o.id && <div className="w-2 h-2 rounded-full bg-primary" />}
-                    </button>
-                  ))}
-                </div>
+              <div className="relative z-20">
+                <PortSelector
+                  label="Origin"
+                  ports={origins}
+                  selectedPortId={originId}
+                  onSelect={setOriginId}
+                  placeholder="Search origin port..."
+                />
               </div>
-              
-              <div>
-                <label className="block text-sm font-medium mb-4">Destination (East Coast)</label>
-                <div className="space-y-2">
-                  {destinations.map((d) => (
-                    <button
-                      key={d.id}
-                      onClick={() => setDestinationId(d.id)}
-                      className={cn(
-                        "w-full text-left px-4 py-3 border text-sm font-medium transition-colors flex items-center justify-between",
-                        destinationId === d.id 
-                          ? "bg-secondary text-secondary-foreground border-primary" 
-                          : "bg-background text-muted-foreground hover:border-primary/50"
-                      )}
-                    >
-                      {d.name}
-                      {destinationId === d.id && <div className="w-2 h-2 rounded-full bg-primary" />}
-                    </button>
-                  ))}
-                </div>
+              <div className="relative z-10">
+                <PortSelector
+                  label="Destination (East Coast)"
+                  ports={destinations}
+                  selectedPortId={destinationId}
+                  onSelect={setDestinationId}
+                  placeholder="Search destination port..."
+                />
               </div>
             </div>
           </div>

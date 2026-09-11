@@ -1,48 +1,37 @@
-import { ROUTES } from './routes';
+import { getOrCalculateRoute } from './routes';
 import type { HistoricalFreight } from './types';
+import { BDI_FEATURES } from '../services/bdiService';
 
-// Synthetic historical data generator to ensure deterministic charts.
-// This is generated based on a seed so that it looks like real data but doesn't use Math.random() in production.
-
-function mulberry32(a: number) {
-  return function() {
-    let t = a += 0x6D2B79F5;
-    t = Math.imul(t ^ t >>> 15, t | 1);
-    t ^= t + Math.imul(t ^ t >>> 7, t | 61);
-    return ((t ^ t >>> 14) >>> 0) / 4294967296;
-  }
-}
-
+// Deterministic historical data generator based strictly on distances and reference data.
 export function generateDeterministicFreightHistory(
   originId: string, 
   destinationId: string,
   vesselId: string,
   days: number = 30
 ): HistoricalFreight[] {
-  // Use string lengths and char codes to create a deterministic seed
-  const seedStr = originId + destinationId;
-  let seed = 0;
-  for (let i = 0; i < seedStr.length; i++) {
-    seed += seedStr.charCodeAt(i);
+  const route = getOrCalculateRoute(originId, destinationId);
+  const routeId = route.id;
+  
+  // Base rate depends strictly on distance (e.g. bunker cost estimate)
+  // Distance / 1000 * constant rate + port fees
+  let baseRate = (route.distanceNM / 1000) * 2.5 + 8;
+  
+  // Modulate based on the GLOBAL BDI signal
+  // Normalizing against a reference BDI of ~1500 points
+  if (BDI_FEATURES && BDI_FEATURES.currentBdi) {
+    const bdiFactor = Math.max(0.3, BDI_FEATURES.currentBdi / 1500);
+    baseRate = baseRate * bdiFactor;
   }
   
-  const rng = mulberry32(seed);
-  
-  // Base rate depends on distance
-  const route = ROUTES.find(r => r.originId === originId && r.destinationId === destinationId);
-  const routeId = route ? route.id : 'unknown';
-  const baseRate = route ? (route.distanceNM / 1000) * 2.5 + 8 : 15.0; // Synthetic base rate calculation
-  
   const data: HistoricalFreight[] = [];
-  let currentRate = baseRate;
   
-  // Generate historical trend
+  // Create a flat/slightly sloped linear deterministic history (no random, no sine waves)
+  // We use distance modulo as a deterministic slope offset so routes look slightly different.
+  const routeSlope = (route.distanceNM % 5) * 0.05 - 0.1; 
+  
   for (let i = -days; i <= 0; i++) {
-    // Add some deterministic volatility
-    const volatility = (rng() * 2) - 1; // -1 to 1
-    const trend = Math.sin(i / 5) * 0.5; // Slow moving sine wave trend
-    
-    currentRate += volatility * 0.4 + trend;
+    // Linear trend to baseRate
+    let currentRate = baseRate + (i * routeSlope);
     
     // Ensure rate doesn't go below an unrealistic floor
     if (currentRate < 4) currentRate = 4;

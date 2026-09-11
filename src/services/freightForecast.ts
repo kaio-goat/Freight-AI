@@ -1,5 +1,6 @@
 import type { FreightForecastResult, HistoricalFreight } from '../data/types';
 import { generateDeterministicFreightHistory } from '../data/freightHistory';
+import { getRoute } from '../data/routes';
 
 const VESSEL_RATE_MULTIPLIERS: Record<string, number> = {
   capesize: 0.85,
@@ -14,15 +15,16 @@ export function calculateFreightForecast(
   vesselId: string,
   _cargoType: string
 ): FreightForecastResult {
-  // 1. Fetch deterministic synthetic historical data
+  const isSupported = !!getRoute(originId, destinationId);
+  const dataCoverage = isSupported ? 'supported' : 'exploratory';
+
+  // 1. Fetch deterministic historical data (derived from distance)
   const rawHistory: HistoricalFreight[] = generateDeterministicFreightHistory(originId, destinationId, vesselId, 30);
   
-  // Transform domain model to chart-friendly format, applying vessel multiplier
-  // Note: These coefficients represent prototype calibration assumptions reflecting relative economies of scale.
   const multiplier = VESSEL_RATE_MULTIPLIERS[vesselId.toLowerCase()] || 1.0;
   
   const history = rawHistory.map((h, i) => ({
-    day: i - rawHistory.length + 1, // e.g., -29 to 0
+    day: i - rawHistory.length + 1,
     rate: Number((h.ratePerTonne * multiplier).toFixed(2))
   }));
 
@@ -34,26 +36,21 @@ export function calculateFreightForecast(
   const trendVal = currentRate - avg7Days;
   
   let trend: 'UP' | 'DOWN' | 'STABLE' = 'STABLE';
-  if (trendVal > (0.5 * multiplier)) trend = 'UP';
-  else if (trendVal < (-0.5 * multiplier)) trend = 'DOWN';
+  if (trendVal > (0.1 * multiplier)) trend = 'UP';
+  else if (trendVal < (-0.1 * multiplier)) trend = 'DOWN';
 
-  // 3. Volatility Calculation (Standard Deviation of last 14 days)
-  const last14Days = history.slice(-14).map(d => d.rate);
-  const avg14Days = last14Days.reduce((a, b) => a + b, 0) / 14;
-  const variance = last14Days.reduce((a, b) => a + Math.pow(b - avg14Days, 2), 0) / 14;
-  const volatility = Math.sqrt(variance);
+  // Fixed volatility factor depending on data coverage
+  const volatility = isSupported ? 1.5 : 2.5;
 
-  // 4. Forecast Generation (Deterministic)
+  // 4. Forecast Generation (Deterministic Linear Projection)
   const forecastData = [];
   let baseRunning = currentRate;
   
-  // Use recent trend as momentum instead of arbitrary string logic
-  const momentum = trendVal * 0.08;
+  // Extrapolate slope
+  const slope = trendVal / 7;
 
   for (let i = 1; i <= 30; i++) {
-    // Mean reversion + momentum
-    const meanReversion = (avg14Days - baseRunning) * 0.05;
-    baseRunning += meanReversion + momentum;
+    baseRunning += slope;
     
     // Widen confidence interval over time
     const interval = (volatility * 1.5) + (i * 0.05 * multiplier);
@@ -70,9 +67,10 @@ export function calculateFreightForecast(
   const forecast30d = forecastData[29].base;
   const finalDay = forecastData[29];
 
-  // Confidence is inversely related to volatility relative to rate
   const relativeVolatility = (volatility / currentRate) * 100;
-  const confidence = Math.max(40, Math.min(95, Math.round(95 - (relativeVolatility * 2))));
+  // Lower confidence for exploratory routes
+  const baseConfidence = isSupported ? 85 : 55;
+  const confidence = Math.max(40, Math.min(95, Math.round(baseConfidence - (relativeVolatility * 2))));
 
   return {
     currentRate,
@@ -84,6 +82,7 @@ export function calculateFreightForecast(
     confidence,
     trend,
     volatility,
+    dataCoverage,
     historicalData: history,
     forecastData
   };

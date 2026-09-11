@@ -1,11 +1,13 @@
 import { useNavigate } from 'react-router-dom';
-import { MapPin, ShieldCheck, AlertTriangle, TrendingDown, TrendingUp, Info, Anchor, LineChart as LineChartIcon, CheckCircle2 } from 'lucide-react';
+import { MapPin, ShieldCheck, AlertTriangle, TrendingDown, TrendingUp, Info, Anchor, LineChart as LineChartIcon, CheckCircle2, Globe } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { Button } from '@/components/ui/Button';
 import { useScenarioStore } from '@/store/scenarioStore';
 import { cn } from '@/lib/utils';
 import { VESSEL_CLASSES } from '@/data/vessels';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatting';
+import { BDI_FEATURES } from '@/services/bdiService';
+import { PORT_TRAFFIC_FEATURES } from '@/services/portTrafficService';
 
 export function Analysis() {
   const navigate = useNavigate();
@@ -101,6 +103,20 @@ export function Analysis() {
         </div>
       </header>
 
+      {scenario.decisionResult.forecast.dataCoverage === 'exploratory' && (
+        <div className="mb-8 p-4 border border-warning bg-warning/10 flex items-start space-x-4">
+          <AlertTriangle className="w-5 h-5 text-warning shrink-0 mt-0.5" />
+          <div>
+            <h4 className="font-bold text-warning mb-1">Exploratory Route</h4>
+            <p className="text-sm text-warning/90">
+              Route-specific historical data is unavailable for this port combination. 
+              The forecast below uses global dry-bulk freight market proxies and estimated nautical distances. 
+              Data confidence is reduced.
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="grid md:grid-cols-3 gap-8">
         
         {/* Main Content Column */}
@@ -194,6 +210,36 @@ export function Analysis() {
                 <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">Model Confidence</div>
                 <div className="text-xl font-bold">{formatPercentage(forecast.confidence)}</div>
               </div>
+            </div>
+          </section>
+
+          {/* Macro Market Context (BDI) */}
+          <section className="border border-border bg-card p-6">
+            <h2 className="text-xs uppercase tracking-widest text-muted-foreground font-bold mb-4 flex items-center">
+              <Globe className="w-4 h-4 mr-2" /> Macro Market Context (BDI)
+            </h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div>
+                <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">Index</div>
+                <div className="text-lg font-bold">{formatNumber(BDI_FEATURES?.currentBdi || 0)}</div>
+              </div>
+              <div>
+                <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">Trend</div>
+                <div className={cn("text-lg font-bold flex items-center", BDI_FEATURES?.trend === 'UP' ? "text-accent" : BDI_FEATURES?.trend === 'DOWN' ? "text-positive" : "text-muted-foreground")}>
+                  {BDI_FEATURES?.trend === 'UP' ? '+' : ''}{(BDI_FEATURES?.monthlyChangePercent || 0).toFixed(1)}%
+                </div>
+              </div>
+              <div>
+                <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">12M Avg</div>
+                <div className="text-lg font-bold">{formatNumber(BDI_FEATURES?.avg12m || 0)}</div>
+              </div>
+              <div>
+                <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">Volatility</div>
+                <div className="text-lg font-bold">{formatNumber(BDI_FEATURES?.volatility12m || 0)}</div>
+              </div>
+            </div>
+            <div className="mt-4 pt-4 border-t border-border text-sm text-muted-foreground">
+              Freight forecast base rates are dynamically normalized against real Baltic Dry Index (BDI) historical signals.
             </div>
           </section>
 
@@ -303,6 +349,35 @@ export function Analysis() {
                 <div className="text-sm">
                   <span className="font-bold text-accent">Warning: Port Issues. </span>
                   {port.destination.warnings.join(' ')}
+                </div>
+              </div>
+            )}
+            
+            {/* Contextual Intelligence for Haldia/Sagar-Sandheads */}
+            {(scenario.destinationId === 'haldia' || scenario.destinationId === 'sagar-sandheads') && PORT_TRAFFIC_FEATURES && (
+              <div className="mt-6 p-4 bg-secondary/30 border border-border">
+                <h3 className="text-xs uppercase tracking-widest text-muted-foreground font-bold mb-3 flex items-center">
+                  <Anchor className="w-3 h-3 mr-2" /> Regional Demand Context (Kolkata/Haldia)
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  <div>
+                    <div className="text-muted-foreground mb-1">Total Traffic ({PORT_TRAFFIC_FEATURES.latestYear})</div>
+                    <div className="font-bold">{formatNumber(PORT_TRAFFIC_FEATURES.totalTraffic)}</div>
+                  </div>
+                  <div>
+                    <div className="text-muted-foreground mb-1">YoY Growth</div>
+                    <div className={PORT_TRAFFIC_FEATURES.yoyGrowthPercent > 0 ? "text-accent font-bold" : "text-positive font-bold"}>
+                      {PORT_TRAFFIC_FEATURES.yoyGrowthPercent > 0 ? '+' : ''}{PORT_TRAFFIC_FEATURES.yoyGrowthPercent.toFixed(1)}%
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-muted-foreground mb-1">Overseas Mix</div>
+                    <div className="font-bold">{PORT_TRAFFIC_FEATURES.overseasSharePercent.toFixed(1)}%</div>
+                  </div>
+                  <div>
+                    <div className="text-muted-foreground mb-1">Import/Export</div>
+                    <div className="font-bold">{PORT_TRAFFIC_FEATURES.importExportRatio.toFixed(2)}x</div>
+                  </div>
                 </div>
               </div>
             )}

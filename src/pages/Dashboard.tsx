@@ -7,6 +7,7 @@ import { useScenarioStore } from '@/store/scenarioStore';
 import { cn } from '@/lib/utils';
 import type { VoyageScenario } from '@/data/types';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatting';
+import { BDI_FEATURES } from '@/services/bdiService';
 
 export function Dashboard() {
   const { scenarios, setActiveScenario } = useScenarioStore();
@@ -56,10 +57,6 @@ export function Dashboard() {
   const activeScenarios = validScenarios.slice(0, 3);
   const latestScenario = activeScenarios[0];
   
-  const avgForecast = validScenarios.length > 0 
-    ? (validScenarios.reduce((acc: number, s: VoyageScenario) => acc + s.decisionResult.forecast.currentRate, 0) / validScenarios.length).toFixed(2)
-    : null;
-    
   const highRiskCount = validScenarios.filter((s: VoyageScenario) => s.decisionResult.port.destination.status !== 'COMPATIBLE' || s.decisionResult.risk.overallRisk === 'High').length;
   
   // Best Market Window derived from real model output (Phase 7)
@@ -93,10 +90,10 @@ export function Dashboard() {
           <div className="text-3xl font-bold">{validScenarios.length < 10 ? `0${validScenarios.length}` : validScenarios.length}</div>
         </div>
         <div className="p-4 border border-border bg-card">
-          <div className="text-xs uppercase tracking-widest text-muted-foreground mb-2">Avg Forecast Freight</div>
+          <div className="text-xs uppercase tracking-widest text-muted-foreground mb-2">Baltic Dry Index</div>
           <div className="text-3xl font-bold">
-            {avgForecast ? `$${avgForecast}` : "—"}
-            {avgForecast && <span className="text-sm font-normal text-muted-foreground"> / MT</span>}
+            {BDI_FEATURES ? formatNumber(BDI_FEATURES.currentBdi) : "—"}
+            {BDI_FEATURES && <span className="text-sm font-normal text-muted-foreground"> pts</span>}
           </div>
         </div>
         <div className="p-4 border border-border bg-card bg-secondary/50">
@@ -136,10 +133,13 @@ export function Dashboard() {
                   <div key={scenario.id} className="border border-border bg-card hover:border-primary/50 transition-colors cursor-pointer group" onClick={() => handleOpenAnalysis(scenario.id)}>
                     <div className="p-6">
                       <div className="flex items-start justify-between mb-4">
-                        <div className="flex items-center space-x-3 text-lg font-medium">
+                        <div className="flex items-center space-x-3 text-lg font-medium flex-wrap gap-y-2">
                           <span>{scenario.originName}</span>
                           <ArrowRight className="w-4 h-4 text-muted-foreground" />
                           <span>{scenario.destinationName}</span>
+                          {decisionResult.forecast.dataCoverage === 'exploratory' && (
+                            <span className="px-2 py-0.5 bg-warning/10 text-warning text-[10px] uppercase tracking-wider font-bold border border-warning/20">Exploratory</span>
+                          )}
                         </div>
                         <div className="text-right">
                           <div className="text-sm text-muted-foreground flex items-center justify-end">

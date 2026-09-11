@@ -9,12 +9,14 @@ import {
   BarChart3, AlertTriangle, Globe, Ship, Anchor, Clock, Info
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { formatCurrency, formatNumber } from '@/utils/formatting';
+import { formatNumber } from '@/utils/formatting';
 import { 
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, 
-  Tooltip, ReferenceLine 
+  Tooltip
 } from 'recharts';
 import { runDecisionEngine } from '@/services/decisionEngine';
+import { BDI_RECORDS, BDI_FEATURES } from '@/services/bdiService';
+import { PORT_TRAFFIC_RECORDS, PORT_TRAFFIC_FEATURES } from '@/services/portTrafficService';
 
 export function MarketPage() {
   const navigate = useNavigate();
@@ -37,47 +39,17 @@ export function MarketPage() {
     ? activeScenario.decisionResult 
     : runDecisionEngine(selectedRoute.originId, selectedRoute.destinationId, 'Coking Coal', 70000); // Baseline deterministic reference
 
-  const forecast = decisionResult.forecast;
   const timing = decisionResult.timing;
   const risk = decisionResult.risk;
   const vessel = decisionResult.vessel;
 
-  // Pre-calculate change
-  const forecastChangePercent = useMemo(() => {
-    const { currentRate, forecast7d } = forecast;
-    if (currentRate === 0) return 0;
-    return ((forecast7d - currentRate) / currentRate) * 100;
-  }, [forecast]);
-
-  // Combine historical and forecast for the chart
-  const chartData = useMemo(() => {
-    const data = [];
-    
-    forecast.historicalData.forEach((h: any) => {
-      data.push({
-        day: `Day ${h.day}`,
-        rate: h.rate || h.ratePerTonne,
-        isForecast: false
-      });
-    });
-
-    // Add current day
-    data.push({
-      day: 'Today',
-      rate: forecast.currentRate,
-      isForecast: false
-    });
-
-    forecast.forecastData.forEach((f: any) => {
-      data.push({
-        day: `Day +${f.day}`,
-        rate: f.base,
-        isForecast: true
-      });
-    });
-
-    return data;
-  }, [forecast]);
+  // Combine historical BDI for the chart
+  const bdiChartData = useMemo(() => {
+    return BDI_RECORDS.map(r => ({
+      date: r.date,
+      value: r.value
+    }));
+  }, []);
 
   return (
     <div className="max-w-7xl mx-auto pb-12 space-y-6">
@@ -88,7 +60,7 @@ export function MarketPage() {
             Macro Market Intelligence
           </h1>
           <p className="text-muted-foreground mt-1">
-            Global freight market overview, volatility analysis, and procurement timing insights.
+            Global freight market overview, Baltic Dry Index (BDI) tracking, and macro insights.
           </p>
         </div>
         
@@ -144,25 +116,28 @@ export function MarketPage() {
           {/* Key Metrics */}
           <div className="grid grid-cols-3 gap-4">
             <div className="border border-border p-5 bg-card">
-              <div className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-1">Current Freight Index</div>
+              <div className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-1">Baltic Dry Index (BDI)</div>
               <div className="text-3xl font-bold text-foreground">
-                {formatCurrency(forecast.currentRate)}<span className="text-sm font-normal text-muted-foreground">/MT</span>
+                {formatNumber(BDI_FEATURES?.currentBdi || 0)}<span className="text-sm font-normal text-muted-foreground"> pts</span>
               </div>
+              <div className="text-xs text-muted-foreground mt-2">Latest monthly close</div>
             </div>
             <div className="border border-border p-5 bg-card">
-              <div className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-1">7-Day Momentum</div>
+              <div className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-1">Monthly Momentum</div>
               <div className="flex items-center gap-2 mt-1">
-                {forecast.trend === 'UP' ? <TrendingUp className="w-6 h-6 text-destructive" /> : (forecast.trend === 'DOWN' ? <TrendingDown className="w-6 h-6 text-positive" /> : <Minus className="w-6 h-6 text-muted-foreground" />)}
-                <span className={cn("font-bold text-2xl", forecast.trend === 'UP' ? "text-destructive" : (forecast.trend === 'DOWN' ? "text-positive" : "text-muted-foreground"))}>
-                  {forecast.trend === 'UP' ? '+' : ''}{forecastChangePercent.toFixed(1)}%
+                {BDI_FEATURES?.trend === 'UP' ? <TrendingUp className="w-6 h-6 text-destructive" /> : (BDI_FEATURES?.trend === 'DOWN' ? <TrendingDown className="w-6 h-6 text-positive" /> : <Minus className="w-6 h-6 text-muted-foreground" />)}
+                <span className={cn("font-bold text-2xl", BDI_FEATURES?.trend === 'UP' ? "text-destructive" : (BDI_FEATURES?.trend === 'DOWN' ? "text-positive" : "text-muted-foreground"))}>
+                  {BDI_FEATURES?.trend === 'UP' ? '+' : ''}{(BDI_FEATURES?.monthlyChangePercent || 0).toFixed(1)}%
                 </span>
               </div>
+              <div className="text-xs text-muted-foreground mt-2">YoY: {(BDI_FEATURES?.yoyChangePercent || 0) > 0 ? '+' : ''}{(BDI_FEATURES?.yoyChangePercent || 0).toFixed(1)}%</div>
             </div>
             <div className="border border-border p-5 bg-card">
-              <div className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-1">Market Volatility</div>
-              <div className={cn("text-2xl font-bold mt-1 uppercase", risk.freightVolatilityRisk === 'Low' ? 'text-positive' : (risk.freightVolatilityRisk === 'Moderate' ? 'text-warning' : 'text-accent'))}>
-                {risk.freightVolatilityRisk}
+              <div className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-1">12M Volatility</div>
+              <div className="text-2xl font-bold mt-1 text-foreground">
+                {formatNumber(BDI_FEATURES?.volatility12m || 0)}
               </div>
+              <div className="text-xs text-muted-foreground mt-2">Standard deviation (12 mo)</div>
             </div>
           </div>
 
@@ -171,55 +146,47 @@ export function MarketPage() {
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center">
                 <BarChart3 className="w-4 h-4 mr-2" />
-                Freight Rate Horizon (30-Day)
+                Baltic Dry Index (2010 - Present)
               </h3>
-              <div className="text-xs text-muted-foreground border border-border/50 px-2 py-1 rounded bg-secondary/20">
-                Deterministic Model-Derived Data
+              <div className="text-xs text-positive border border-positive/30 px-2 py-1 rounded bg-positive/10 font-medium">
+                Real Historical Data
               </div>
             </div>
             
             <div className="h-[350px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                <AreaChart data={bdiChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                   <defs>
-                    <linearGradient id="colorHistorical" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#475569" stopOpacity={0.3}/>
+                    <linearGradient id="colorBdi" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#475569" stopOpacity={0.4}/>
                       <stop offset="95%" stopColor="#475569" stopOpacity={0}/>
-                    </linearGradient>
-                    <linearGradient id="colorForecast" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
                   <XAxis 
-                    dataKey="day" 
+                    dataKey="date" 
                     stroke="#475569" 
                     tick={{fill: '#94a3b8', fontSize: 11}}
                     tickMargin={10}
-                    minTickGap={30}
+                    minTickGap={50}
                   />
                   <YAxis 
                     stroke="#475569" 
                     tick={{fill: '#94a3b8', fontSize: 11}}
-                    tickFormatter={(val) => `$${val}`}
                     domain={['auto', 'auto']}
                   />
                   <Tooltip 
                     contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', borderRadius: '4px' }}
                     itemStyle={{ color: '#f8fafc' }}
                     labelStyle={{ color: '#94a3b8', marginBottom: '4px' }}
-                    formatter={(value: any) => [formatCurrency(Number(value)), 'Freight Rate']}
+                    formatter={(value: any) => [formatNumber(Number(value)), 'BDI']}
                   />
-                  <ReferenceLine x="Today" stroke="#3b82f6" strokeDasharray="3 3" label={{ position: 'top', value: 'Today', fill: '#3b82f6', fontSize: 11 }} />
-                  
-                  {/* Historical Area */}
                   <Area 
                     type="monotone" 
-                    dataKey="rate" 
+                    dataKey="value" 
                     stroke="#94a3b8" 
                     fillOpacity={1} 
-                    fill="url(#colorHistorical)" 
+                    fill="url(#colorBdi)" 
                     activeDot={{ r: 4, fill: '#f8fafc' }}
                   />
                 </AreaChart>
@@ -337,7 +304,79 @@ export function MarketPage() {
               </Button>
             </div>
           </div>
+        </div>
+      </div>
 
+      {/* Kolkata/Haldia Port Activity Section */}
+      <div className="mt-8 border border-border bg-card p-6">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-xl font-bold tracking-tight text-primary flex items-center">
+              <Anchor className="w-5 h-5 mr-2" /> Kolkata/Haldia Port Activity
+            </h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              Annual financial-year traffic acting as a regional demand signal.
+            </p>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <div className="p-4 bg-secondary/50 border border-border">
+            <div className="text-xs uppercase tracking-widest text-muted-foreground mb-1">Latest Year</div>
+            <div className="text-2xl font-bold">{PORT_TRAFFIC_FEATURES?.latestYear}</div>
+          </div>
+          <div className="p-4 bg-secondary/50 border border-border">
+            <div className="text-xs uppercase tracking-widest text-muted-foreground mb-1 flex items-center">
+              <BarChart3 className="w-3 h-3 mr-1" /> Total Traffic
+            </div>
+            <div className="text-2xl font-bold">{formatNumber(PORT_TRAFFIC_FEATURES?.totalTraffic || 0)}</div>
+            <div className={cn("text-sm mt-1 flex items-center", (PORT_TRAFFIC_FEATURES?.yoyGrowthPercent || 0) > 0 ? "text-accent" : "text-positive")}>
+              {(PORT_TRAFFIC_FEATURES?.yoyGrowthPercent || 0) > 0 ? '+' : ''}{(PORT_TRAFFIC_FEATURES?.yoyGrowthPercent || 0).toFixed(1)}% YoY Growth
+            </div>
+          </div>
+          <div className="p-4 bg-secondary/50 border border-border">
+            <div className="text-xs uppercase tracking-widest text-muted-foreground mb-1">Overseas Share</div>
+            <div className="text-2xl font-bold">{(PORT_TRAFFIC_FEATURES?.overseasSharePercent || 0).toFixed(1)}%</div>
+            <div className="text-sm text-muted-foreground mt-1">of total traffic</div>
+          </div>
+          <div className="p-4 bg-secondary/50 border border-border">
+            <div className="text-xs uppercase tracking-widest text-muted-foreground mb-1">Import/Export Ratio</div>
+            <div className="text-2xl font-bold">{(PORT_TRAFFIC_FEATURES?.importExportRatio || 0).toFixed(2)}x</div>
+            <div className="text-sm text-muted-foreground mt-1">Unloaded vs Loaded</div>
+          </div>
+        </div>
+
+        <div className="h-[300px] w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={PORT_TRAFFIC_RECORDS.filter(r => r.totalTraffic !== null).slice(-30)} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} />
+              <XAxis 
+                dataKey="financialYear" 
+                tick={{ fontSize: 12 }}
+                stroke="hsl(var(--muted-foreground))"
+                minTickGap={30}
+              />
+              <YAxis 
+                tickFormatter={(val: number) => formatNumber(val)}
+                tick={{ fontSize: 12 }}
+                stroke="hsl(var(--muted-foreground))"
+              />
+              <Tooltip 
+                contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }}
+                labelStyle={{ fontWeight: 'bold', color: 'hsl(var(--foreground))', marginBottom: '4px' }}
+                formatter={(value: any) => [formatNumber(value as number), 'Total Traffic']}
+              />
+              
+              <Area 
+                type="monotone" 
+                dataKey="totalTraffic" 
+                stroke="hsl(var(--primary))" 
+                fill="hsl(var(--primary))" 
+                fillOpacity={0.2} 
+                strokeWidth={2}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
         </div>
       </div>
     </div>

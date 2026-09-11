@@ -88,6 +88,128 @@ export const PORTS: PortData[] = [
     coordinates: [42.7333, 133.0833]
   },
 
+  // Additional Origins (Expanded Port Master)
+  {
+    id: 'port-australia-gladstone',
+    name: 'Gladstone',
+    country: 'Australia',
+    region: 'Oceania',
+    supportedCargos: ['Thermal Coal', 'Coking Coal'],
+    sourceType: 'REFERENCE',
+    dataConfidence: 'low',
+    coordinates: [-23.8488, 151.2500]
+  },
+  {
+    id: 'port-australia-haypoint',
+    name: 'Hay Point',
+    country: 'Australia',
+    region: 'Oceania',
+    supportedCargos: ['Coking Coal'],
+    sourceType: 'REFERENCE',
+    dataConfidence: 'low',
+    coordinates: [-21.2667, 149.3000]
+  },
+  {
+    id: 'port-australia-dalrymplebay',
+    name: 'Dalrymple Bay',
+    country: 'Australia',
+    region: 'Oceania',
+    supportedCargos: ['Coking Coal'],
+    sourceType: 'REFERENCE',
+    dataConfidence: 'low',
+    coordinates: [-21.2833, 149.3000]
+  },
+  {
+    id: 'port-southafrica-richardsbay',
+    name: 'Richards Bay',
+    country: 'South Africa',
+    region: 'Africa',
+    supportedCargos: ['Thermal Coal'],
+    sourceType: 'REFERENCE',
+    dataConfidence: 'low',
+    coordinates: [-28.7950, 32.0360]
+  },
+  {
+    id: 'port-southafrica-durban',
+    name: 'Durban',
+    country: 'South Africa',
+    region: 'Africa',
+    supportedCargos: ['Other Bulk Cargo'],
+    sourceType: 'REFERENCE',
+    dataConfidence: 'low',
+    coordinates: [-29.8718, 31.0427]
+  },
+  {
+    id: 'port-mozambique-nacala',
+    name: 'Nacala',
+    country: 'Mozambique',
+    region: 'Africa',
+    supportedCargos: ['Thermal Coal', 'Coking Coal'],
+    sourceType: 'REFERENCE',
+    dataConfidence: 'low',
+    coordinates: [-14.5422, 40.6695]
+  },
+  {
+    id: 'port-indonesia-taboneo',
+    name: 'Taboneo Anchorage',
+    country: 'Indonesia',
+    region: 'Asia',
+    supportedCargos: ['Thermal Coal'],
+    sourceType: 'REFERENCE',
+    dataConfidence: 'low',
+    coordinates: [-3.6333, 114.4500]
+  },
+  {
+    id: 'port-indonesia-muaraberau',
+    name: 'Muara Berau Anchorage',
+    country: 'Indonesia',
+    region: 'Asia',
+    supportedCargos: ['Thermal Coal'],
+    sourceType: 'REFERENCE',
+    dataConfidence: 'low',
+    coordinates: [-0.2500, 117.5833]
+  },
+  {
+    id: 'port-russia-vanino',
+    name: 'Vanino',
+    country: 'Russia',
+    region: 'Asia',
+    supportedCargos: ['Thermal Coal'],
+    sourceType: 'REFERENCE',
+    dataConfidence: 'low',
+    coordinates: [49.0833, 140.2667]
+  },
+  {
+    id: 'port-usa-hamptonroads',
+    name: 'Hampton Roads',
+    country: 'United States',
+    region: 'North America',
+    supportedCargos: ['Coking Coal', 'Thermal Coal'],
+    sourceType: 'REFERENCE',
+    dataConfidence: 'low',
+    coordinates: [36.9500, -76.3167]
+  },
+  {
+    id: 'port-usa-neworleans',
+    name: 'New Orleans',
+    country: 'United States',
+    region: 'North America',
+    supportedCargos: ['Other Bulk Cargo'],
+    sourceType: 'REFERENCE',
+    dataConfidence: 'low',
+    coordinates: [29.9511, -90.0715]
+  },
+  {
+    id: 'port-canada-vancouver',
+    name: 'Vancouver',
+    country: 'Canada',
+    region: 'North America',
+    supportedCargos: ['Coking Coal', 'Thermal Coal', 'Other Bulk Cargo'],
+    sourceType: 'REFERENCE',
+    dataConfidence: 'low',
+    coordinates: [49.2827, -123.1207]
+  },
+
   // Destinations (East Coast of India)
   {
     id: 'port-india-paradip',

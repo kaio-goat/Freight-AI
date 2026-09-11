@@ -21,17 +21,18 @@ export interface PortData {
   name: string;
   country: string;
   region: string;
-  maxDraft: number; // meters
-  maxLOA: number; // meters
-  cargoHandlingScore: number; // 0-100
+  maxDraft?: number; // meters
+  maxLOA?: number; // meters
+  cargoHandlingScore?: number; // 0-100
   supportedCargos: CargoType[];
-  congestionIndex: number; // 0-100 (higher means more congested)
-  infrastructureScore: number; // 0-100
+  congestionIndex?: number; // 0-100 (higher means more congested)
+  infrastructureScore?: number; // 0-100
   sourceType: 'REAL' | 'SYNTHETIC' | 'REFERENCE';
   type?: 'PORT' | 'ANCHORAGE' | 'TERMINAL';
   requiresLighterage?: boolean;
   shoreCargoHandling?: boolean;
   coordinates?: [number, number]; // [latitude, longitude]
+  dataConfidence?: 'high' | 'medium' | 'low';
 }
 
 export interface RouteData {
@@ -46,6 +47,33 @@ export interface RouteData {
   typicalDays: number;
   baseRisk: RiskLevel;
   sourceType: 'REAL' | 'SYNTHETIC' | 'REFERENCE';
+}
+
+export interface BdiRecord {
+  date: string;
+  value: number;
+}
+
+export interface PortTrafficRecord {
+  financialYear: string;
+  overseasUnloaded: number | null;
+  overseasLoaded: number | null;
+  overseasTotal: number | null;
+  coastalUnloaded: number | null;
+  coastalLoaded: number | null;
+  coastalTotal: number | null;
+  totalUnloaded: number | null;
+  totalLoaded: number | null;
+  totalTraffic: number | null;
+}
+
+export interface PortTrafficFeatures {
+  latestYear: string;
+  totalTraffic: number;
+  yoyGrowthPercent: number;
+  overseasSharePercent: number;
+  coastalSharePercent: number;
+  importExportRatio: number;
 }
 
 export interface HistoricalFreight {
@@ -88,6 +116,7 @@ export interface FreightForecastResult {
   confidence: number;
   trend: 'UP' | 'DOWN' | 'STABLE';
   volatility: number;
+  dataCoverage: 'supported' | 'exploratory';
   historicalData: { day: number, rate: number }[];
   forecastData: { day: number, low: number, base: number, high: number }[];
 }

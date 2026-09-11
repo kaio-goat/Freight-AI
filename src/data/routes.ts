@@ -66,3 +66,52 @@ export function getRoute(originId: string, destinationId: string): RouteData | u
 export function getRouteById(routeId: string): RouteData | undefined {
   return ROUTES.find(r => r.id === routeId);
 }
+
+// Haversine distance for fallback calculation (in NM)
+function calculateHaversineDistanceNM(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 3440.065; // Earth radius in nautical miles
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+            Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return Math.round(R * c);
+}
+
+export function getOrCalculateRoute(originId: string, destinationId: string): RouteData {
+  const existing = getRoute(originId, destinationId);
+  if (existing) return existing;
+
+  const origin = PORTS.find(p => p.id === originId);
+  const dest = PORTS.find(p => p.id === destinationId);
+  
+  if (!origin || !dest) {
+    throw new Error("Invalid origin or destination port.");
+  }
+
+  // Calculate distance, accounting for routing factors (Haversine is straight line, multiply by a rough routing factor)
+  let distanceNM = 5000;
+  if (origin.coordinates && dest.coordinates) {
+    const rawDist = calculateHaversineDistanceNM(origin.coordinates[0], origin.coordinates[1], dest.coordinates[0], dest.coordinates[1]);
+    distanceNM = Math.round(rawDist * 1.3); // 1.3 factor for actual sea routes vs straight line
+  }
+
+  const cleanOrigin = origin.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const cleanDest = dest.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const typicalDays = Math.max(7, Math.round(distanceNM / (13 * 24)));
+
+  return {
+    id: `${cleanOrigin}-${cleanDest}`,
+    originId: origin.id,
+    originName: origin.name,
+    originRegion: origin.country,
+    destinationId: dest.id,
+    destinationName: dest.name,
+    destinationRegion: dest.country,
+    distanceNM,
+    typicalDays,
+    baseRisk: 'Moderate',
+    sourceType: 'SYNTHETIC'
+  };
+}
