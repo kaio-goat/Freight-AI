@@ -15,8 +15,9 @@ import {
   Tooltip
 } from 'recharts';
 import { runDecisionEngine } from '@/services/decisionEngine';
-import { BDI_RECORDS, BDI_FEATURES } from '@/services/bdiService';
+import { BDI_RECORDS, BDI_FEATURES, ML_SIGNAL } from '@/services/bdiService';
 import { PORT_TRAFFIC_RECORDS, PORT_TRAFFIC_FEATURES } from '@/services/portTrafficService';
+import { COAL_RECORDS, COAL_FEATURES } from '@/services/coalPriceService';
 
 export function MarketPage() {
   const navigate = useNavigate();
@@ -140,6 +141,58 @@ export function MarketPage() {
               <div className="text-xs text-muted-foreground mt-2">Standard deviation (12 mo)</div>
             </div>
           </div>
+
+          {/* AI MACRO FORECAST */}
+          {ML_SIGNAL ? (
+            <div className="border border-border bg-card p-6 relative">
+              <div className="absolute top-0 right-0 p-4">
+                <Globe className="w-16 h-16 opacity-[0.03] text-foreground" />
+              </div>
+              <h3 className="text-sm font-bold uppercase tracking-wider text-intelligence flex items-center mb-4">
+                <Activity className="w-4 h-4 mr-2" />
+                AI Macro Forecast
+              </h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                <div>
+                  <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">Current BDI</div>
+                  <div className="text-2xl font-bold">{formatNumber(ML_SIGNAL.currentBdi)}</div>
+                </div>
+                <div>
+                  <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">Next-Month Forecast</div>
+                  <div className="text-2xl font-bold text-intelligence">{formatNumber(ML_SIGNAL.predictedBdi)}</div>
+                </div>
+                <div>
+                  <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">Expected Change</div>
+                  <div className={cn("text-2xl font-bold flex items-center", ML_SIGNAL.predictedChangePercent > 0 ? "text-accent" : (ML_SIGNAL.predictedChangePercent < 0 ? "text-positive" : "text-muted-foreground"))}>
+                    {ML_SIGNAL.predictedDirection === 'UP' ? <TrendingUp className="w-5 h-5 mr-1" /> : (ML_SIGNAL.predictedDirection === 'DOWN' ? <TrendingDown className="w-5 h-5 mr-1" /> : <Minus className="w-5 h-5 mr-1" />)}
+                    {ML_SIGNAL.predictedChangePercent > 0 ? '+' : ''}{ML_SIGNAL.predictedChangePercent.toFixed(1)}%
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">Macro Direction</div>
+                  <div className={cn("text-2xl font-bold", ML_SIGNAL.predictedDirection === 'UP' ? "text-accent" : (ML_SIGNAL.predictedDirection === 'DOWN' ? "text-positive" : "text-muted-foreground"))}>
+                    {ML_SIGNAL.predictedDirection}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="mt-4 pt-4 border-t border-border/50 text-xs text-muted-foreground grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="md:col-span-2">
+                  <strong className="text-foreground">V1.5 ML forecast of next-month global dry-bulk market conditions.</strong><br/>
+                  Macro market signal — not a route-specific freight quote. Validated on chronological out-of-time test data.
+                </div>
+                <div className="md:text-right">
+                  <div>Model: <span className="font-medium text-foreground">FREIGHT//IQ V1.5</span></div>
+                  <div>Forecast horizon: <span className="font-medium text-foreground">Next month</span></div>
+                  <div>Signal: <span className="font-medium text-foreground">Macro market</span></div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="border border-border bg-secondary/20 p-6 flex items-center text-muted-foreground">
+              <Info className="w-5 h-5 mr-3" /> AI macro forecast unavailable
+            </div>
+          )}
 
           {/* Market Chart */}
           <div className="border border-border bg-card p-6">
@@ -373,6 +426,79 @@ export function MarketPage() {
                 stroke="hsl(var(--primary))" 
                 fill="hsl(var(--primary))" 
                 fillOpacity={0.2} 
+                strokeWidth={2}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+      
+      {/* Australian Coal Market Signal Section */}
+      <div className="mt-8 border border-border bg-card p-6">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-xl font-bold tracking-tight text-primary flex items-center">
+              <Globe className="w-5 h-5 mr-2" /> Commodity Market Signal
+            </h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              Australian Coal (USD/mt) acting as a complementary demand and commodity pricing signal.
+            </p>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <div className="p-4 bg-secondary/50 border border-border">
+            <div className="text-xs uppercase tracking-widest text-muted-foreground mb-1">Current Price</div>
+            <div className="text-2xl font-bold">${formatNumber(COAL_FEATURES?.currentPrice || 0)}</div>
+          </div>
+          <div className="p-4 bg-secondary/50 border border-border">
+            <div className="text-xs uppercase tracking-widest text-muted-foreground mb-1 flex items-center">
+              <TrendingUp className="w-3 h-3 mr-1" /> MoM Trend
+            </div>
+            <div className="text-2xl font-bold">{COAL_FEATURES?.trend}</div>
+            <div className={cn("text-sm mt-1", (COAL_FEATURES?.monthlyChangePercent || 0) > 0 ? "text-accent" : "text-positive")}>
+              {(COAL_FEATURES?.monthlyChangePercent || 0) > 0 ? '+' : ''}{(COAL_FEATURES?.monthlyChangePercent || 0).toFixed(1)}% / ${Math.abs(COAL_FEATURES?.monthlyChange || 0).toFixed(2)}
+            </div>
+          </div>
+          <div className="p-4 bg-secondary/50 border border-border">
+            <div className="text-xs uppercase tracking-widest text-muted-foreground mb-1">12M Average</div>
+            <div className="text-2xl font-bold">${formatNumber(COAL_FEATURES?.avg12m || 0)}</div>
+            <div className="text-sm text-muted-foreground mt-1">Trailing 12 months</div>
+          </div>
+          <div className="p-4 bg-secondary/50 border border-border">
+            <div className="text-xs uppercase tracking-widest text-muted-foreground mb-1">12M Volatility</div>
+            <div className="text-2xl font-bold">${formatNumber(COAL_FEATURES?.volatility12m || 0)}</div>
+            <div className="text-sm text-muted-foreground mt-1">Standard deviation</div>
+          </div>
+        </div>
+
+        <div className="h-[300px] w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={COAL_RECORDS.slice(-120)} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} />
+              <XAxis 
+                dataKey="date" 
+                tick={{ fontSize: 12 }}
+                stroke="hsl(var(--muted-foreground))"
+                minTickGap={30}
+              />
+              <YAxis 
+                tickFormatter={(val: number) => `$${formatNumber(val)}`}
+                tick={{ fontSize: 12 }}
+                stroke="hsl(var(--muted-foreground))"
+              />
+              <Tooltip 
+                contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }}
+                labelStyle={{ fontWeight: 'bold', color: 'hsl(var(--foreground))', marginBottom: '4px' }}
+                formatter={(value: any) => [`$${formatNumber(value as number)}`, 'Australian Coal']}
+              />
+              
+              <Area 
+                type="monotone" 
+                dataKey="price" 
+                stroke="hsl(var(--accent))" 
+                fill="hsl(var(--accent))" 
+                fillOpacity={0.15} 
                 strokeWidth={2}
               />
             </AreaChart>

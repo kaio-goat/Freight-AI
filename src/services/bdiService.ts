@@ -1,5 +1,6 @@
 import bdiCsvRaw from '../../data/raw/bdi_monthly_2010_2026.csv?raw';
 import type { BdiRecord } from '../data/types';
+import { predictBdi, constructV1_5Features } from './mlInference';
 
 export function parseBdiData(): BdiRecord[] {
   const lines = bdiCsvRaw.trim().split('\n');
@@ -87,3 +88,26 @@ export function generateBdiFeatures(records: BdiRecord[]) {
 // Pre-compute globally so it's only parsed once
 export const BDI_RECORDS = parseBdiData();
 export const BDI_FEATURES = generateBdiFeatures(BDI_RECORDS);
+
+export const ML_SIGNAL = (() => {
+  const features = constructV1_5Features(BDI_RECORDS);
+  if (!features) return null;
+  
+  const predictedBdi = predictBdi(features);
+  const currentBdi = features.bdi;
+  
+  const predictedChange = predictedBdi - currentBdi;
+  const predictedChangePercent = (predictedChange / currentBdi) * 100;
+  
+  let predictedDirection: 'UP' | 'DOWN' | 'STABLE' = 'STABLE';
+  if (predictedChangePercent > 2) predictedDirection = 'UP';
+  else if (predictedChangePercent < -2) predictedDirection = 'DOWN';
+  
+  return {
+    predictedBdi,
+    currentBdi,
+    predictedChange,
+    predictedChangePercent,
+    predictedDirection
+  };
+})();

@@ -1,0 +1,56 @@
+/**
+ * FREIGHT//IQ ML Model Parameters
+ * 
+ * These values are extracted strictly from the validated Python V1.5 Linear Regression artifacts.
+ * They are NOT retrained in TypeScript. Do not modify manually.
+ */
+
+export const V1_5_FEATURES = [
+  "bdi",
+  "bdi_1m_change",
+  "bdi_3m_avg",
+  "bdi_6m_avg",
+  "bdi_12m_avg",
+  "bdi_12m_volatility",
+  "month",
+  "month_sin",
+  "month_cos"
+] as const;
+
+export const SCALER_MEAN = [
+  1312.4093959731545,
+  -5.342281879194631,
+  1317.1408053691273,
+  1329.0570469798658,
+  1356.9157046979865,
+  424.7495973154362,
+  6.382550335570469,
+  0.025046979865771812,
+  7.45116123909501e-19
+];
+
+export const SCALER_SCALE = [
+  725.5188563493213,
+  398.33416162767816,
+  678.9437466487525,
+  632.4762655742661,
+  582.7616771765086,
+  247.3166520415054,
+  3.461382963394604,
+  0.7090229815717676,
+  0.7047194691516208
+];
+
+export const LR_COEFFICIENTS = [
+  624.5571420525783,
+  -27.981912638223573,
+  13.132948343674656,
+  24.013431742399977,
+  -14.332095126595412,
+  -14.237380002654023,
+  -187.78941367689993,
+  -114.9579523312174,
+  -73.76977209636796
+];
+
+export const LR_INTERCEPT = 1312.3020134228188;

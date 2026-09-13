@@ -1,0 +1,60 @@
+{
+  "dataset": {
+    "source": "data/raw/bdi_monthly_2010_2026.csv",
+    "row_count": 187,
+    "date_range": "2011-01 to 2026-07",
+    "target_date_range": "2011-02 to 2026-08",
+    "target_definition": "BDI(T+1)",
+    "missing_values": 0,
+    "duplicate_dates": 0,
+    "earliest_usable_date": "2011-01"
+  },
+  "feature_engineering": {
+    "formulas": {
+      "pct_change": "(BDI_t / BDI_t-k) - 1",
+      "momentum": "BDI_t - BDI_t-k"
+    },
+    "feature_count": 29,
+    "groups": {
+      "A_V1_5": 9,
+      "B_V1_5_Lags": 14,
+      "C_V1_5_Returns": 13,
+      "D_V1_5_Mom_Range_Vol": 20,
+      "E_Full_V2": 29
+    }
+  },
+  "validation": {
+    "strategy": "TimeSeriesSplit",
+    "folds": 5,
+    "fold_ranges": [
+      {
+        "fold": 0,
+        "train_range": "2011-01 to 2013-04",
+        "val_range": "2013-05 to 2015-04"
+      },
+      {
+        "fold": 1,
+        "train_range": "2011-01 to 2015-04",
+        "val_range": "2015-05 to 2017-04"
+      },
+      {
+        "fold": 2,
+        "train_range": "2011-01 to 2017-04",
+        "val_range": "2017-05 to 2019-04"
+      },
+      {
+        "fold": 3,
+        "train_range": "2011-01 to 2019-04",
+        "val_range": "2019-05 to 2021-04"
+      },
+      {
+        "fold": 4,
+        "train_range": "2011-01 to 2021-04",
+        "val_range": "2021-05 to 2023-04"
+      }
+    ],
+    "scaler_strategy": "StandardScaler fit independently on each fold training set",
+    "leakage_check": "Strictly chronological. No target info used for features. Rolling stats purely historical.",
+    "test_period": "2023-06 to 2026-08"
+  }
+}

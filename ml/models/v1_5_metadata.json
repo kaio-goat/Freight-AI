@@ -1,0 +1,10 @@
+{
+  "train_period": "2011-01 to 2023-05",
+  "test_period": "2023-06 to 2026-07",
+  "ablation": {
+    "RMSE_improvement_from_Coal": -28.917451139559375,
+    "DA_improvement_from_Coal": -0.10526315789473684,
+    "RMSE_improvement_vs_Naive": 18.618193362412285,
+    "DA_improvement_vs_Naive": 0.6578947368421053
+  }
+}

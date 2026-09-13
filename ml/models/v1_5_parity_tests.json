@@ -1,0 +1,77 @@
+[
+  {
+    "date": "2023-06",
+    "features": {
+      "bdi": 1091.0,
+      "bdi_1m_change": 114.0,
+      "bdi_3m_avg": 1214.67,
+      "bdi_6m_avg": 1117.33,
+      "bdi_12m_avg": 1304.75,
+      "bdi_12m_volatility": 349.38,
+      "month": 6.0,
+      "month_sin": 0.0,
+      "month_cos": -1.0
+    },
+    "prediction": 1238.4159908218337
+  },
+  {
+    "date": "2023-07",
+    "features": {
+      "bdi": 1127.0,
+      "bdi_1m_change": 36.0,
+      "bdi_3m_avg": 1065.0,
+      "bdi_6m_avg": 1191.67,
+      "bdi_12m_avg": 1240.75,
+      "bdi_12m_volatility": 302.6,
+      "month": 7.0,
+      "month_sin": -0.5,
+      "month_cos": -0.866
+    },
+    "prediction": 1291.8680498965552
+  },
+  {
+    "date": "2023-08",
+    "features": {
+      "bdi": 1086.0,
+      "bdi_1m_change": -41.0,
+      "bdi_3m_avg": 1101.33,
+      "bdi_6m_avg": 1207.67,
+      "bdi_12m_avg": 1250.83,
+      "bdi_12m_volatility": 295.17,
+      "month": 8.0,
+      "month_sin": -0.866,
+      "month_cos": -0.5
+    },
+    "prediction": 1230.2488283066093
+  },
+  {
+    "date": "2023-09",
+    "features": {
+      "bdi": 1701.0,
+      "bdi_1m_change": 615.0,
+      "bdi_3m_avg": 1304.67,
+      "bdi_6m_avg": 1259.67,
+      "bdi_12m_avg": 1245.92,
+      "bdi_12m_volatility": 287.03,
+      "month": 9.0,
+      "month_sin": -1.0,
+      "month_cos": -0.0
+    },
+    "prediction": 1635.2150013621442
+  },
+  {
+    "date": "2023-10",
+    "features": {
+      "bdi": 1459.0,
+      "bdi_1m_change": -242.0,
+      "bdi_3m_avg": 1415.33,
+      "bdi_6m_avg": 1240.17,
+      "bdi_12m_avg": 1245.58,
+      "bdi_12m_volatility": 286.78,
+      "month": 10.0,
+      "month_sin": -0.866,
+      "month_cos": 0.5
+    },
+    "prediction": 1360.197386064193
+  }
+]

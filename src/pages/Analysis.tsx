@@ -1,12 +1,12 @@
 import { useNavigate } from 'react-router-dom';
-import { MapPin, ShieldCheck, AlertTriangle, TrendingDown, TrendingUp, Info, Anchor, LineChart as LineChartIcon, CheckCircle2, Globe } from 'lucide-react';
+import { MapPin, ShieldCheck, AlertTriangle, TrendingDown, TrendingUp, Info, Anchor, LineChart as LineChartIcon, CheckCircle2, Globe, Activity, Minus } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { Button } from '@/components/ui/Button';
 import { useScenarioStore } from '@/store/scenarioStore';
 import { cn } from '@/lib/utils';
 import { VESSEL_CLASSES } from '@/data/vessels';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatting';
-import { BDI_FEATURES } from '@/services/bdiService';
+import { BDI_FEATURES, ML_SIGNAL } from '@/services/bdiService';
 import { PORT_TRAFFIC_FEATURES } from '@/services/portTrafficService';
 
 export function Analysis() {
@@ -242,6 +242,45 @@ export function Analysis() {
               Freight forecast base rates are dynamically normalized against real Baltic Dry Index (BDI) historical signals.
             </div>
           </section>
+
+          {/* AI Macro Forecast */}
+          {ML_SIGNAL ? (
+            <section className="border border-border bg-card p-6">
+              <h2 className="text-xs uppercase tracking-widest text-intelligence font-bold mb-4 flex items-center">
+                <Activity className="w-4 h-4 mr-2" /> AI Macro Forecast (V1.5)
+              </h2>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div>
+                  <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">Current BDI</div>
+                  <div className="text-lg font-bold">{formatNumber(ML_SIGNAL.currentBdi)}</div>
+                </div>
+                <div>
+                  <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">Predicted BDI (Next Mo)</div>
+                  <div className="text-lg font-bold text-intelligence">{formatNumber(ML_SIGNAL.predictedBdi)}</div>
+                </div>
+                <div>
+                  <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">Expected Change</div>
+                  <div className={cn("text-lg font-bold flex items-center", ML_SIGNAL.predictedChangePercent > 0 ? "text-accent" : (ML_SIGNAL.predictedChangePercent < 0 ? "text-positive" : "text-muted-foreground"))}>
+                    {ML_SIGNAL.predictedDirection === 'UP' ? <TrendingUp className="w-4 h-4 mr-1" /> : (ML_SIGNAL.predictedDirection === 'DOWN' ? <TrendingDown className="w-4 h-4 mr-1" /> : <Minus className="w-4 h-4 mr-1" />)}
+                    {ML_SIGNAL.predictedChangePercent > 0 ? '+' : ''}{ML_SIGNAL.predictedChangePercent.toFixed(1)}%
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">Direction</div>
+                  <div className={cn("text-lg font-bold", ML_SIGNAL.predictedDirection === 'UP' ? "text-accent" : (ML_SIGNAL.predictedDirection === 'DOWN' ? "text-positive" : "text-muted-foreground"))}>
+                    {ML_SIGNAL.predictedDirection}
+                  </div>
+                </div>
+              </div>
+              <div className="mt-4 pt-4 border-t border-border text-xs text-muted-foreground">
+                <span className="font-medium text-foreground">Macro market signal — not a route-specific freight quote.</span> V1.5 ML forecast of next-month global dry-bulk market conditions.
+              </div>
+            </section>
+          ) : (
+            <section className="border border-border bg-secondary/20 p-6 flex items-center text-muted-foreground text-sm">
+              <Info className="w-4 h-4 mr-2" /> AI macro forecast unavailable
+            </section>
+          )}
 
           {/* Vessel Matching */}
           <section className="border border-border bg-card p-6">

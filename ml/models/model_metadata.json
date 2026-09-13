@@ -1,0 +1,25 @@
+{
+  "best_model": "LinearRegression",
+  "features": [
+    "bdi",
+    "bdi_1m_change",
+    "bdi_3m_avg",
+    "bdi_6m_avg",
+    "bdi_12m_avg",
+    "bdi_12m_volatility",
+    "coal_price",
+    "coal_1m_change",
+    "coal_3m_avg",
+    "coal_6m_avg",
+    "coal_12m_avg",
+    "coal_12m_volatility",
+    "month",
+    "month_sin",
+    "month_cos"
+  ],
+  "train_rows": 149,
+  "test_rows": 38,
+  "train_date_range": "2011-01 to 2023-05",
+  "test_date_range": "2023-06 to 2026-07",
+  "criterion": "Directional Accuracy as primary metric (crucial for freight trend prediction), penalized by normalized RMSE."
+}

@@ -76,6 +76,45 @@ export interface PortTrafficFeatures {
   importExportRatio: number;
 }
 
+export interface CoalRecord {
+  date: string;
+  price: number;
+}
+
+export interface CoalFeatures {
+  currentPrice: number;
+  monthlyChange: number;
+  monthlyChangePercent: number;
+  avg3m: number;
+  avg6m: number;
+  avg12m: number;
+  volatility12m: number;
+  trend: 'UP' | 'DOWN' | 'STABLE';
+  yoyChange: number;
+  yoyChangePercent: number;
+}
+
+export interface TrainingFeatureRow {
+  date: string;
+  bdi: number;
+  bdi_1m_change: number;
+  bdi_3m_avg: number;
+  bdi_6m_avg: number;
+  bdi_12m_avg: number;
+  bdi_12m_volatility: number;
+  coal_price: number;
+  coal_1m_change: number;
+  coal_3m_avg: number;
+  coal_6m_avg: number;
+  coal_12m_avg: number;
+  coal_12m_volatility: number;
+  month: number;
+  month_sin: number;
+  month_cos: number;
+  target_date: string;
+  target_bdi: number;
+}
+
 export interface HistoricalFreight {
   date: string;
   routeId: string;
